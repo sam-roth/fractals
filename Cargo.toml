@@ -4,7 +4,4 @@ version = "0.1.0"
 authors = ["Sam Roth <sam.roth1@gmail.com>"]
 
 [dependencies]
-piston = "0.25.0"
-piston2d-graphics = "0.17.0"
-piston2d-opengl_graphics = "0.33.0"
-piston_window = "0.55.0"
+glium = "*"

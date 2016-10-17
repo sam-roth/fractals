@@ -1,22 +1,35 @@
-extern crate piston;
-extern crate piston_window;
-extern crate graphics;
-// extern crate image;
+#[macro_use] extern crate glium;
 
 mod lsystem;
 
 use std::collections::HashMap;
-
-use graphics::math::Matrix2d;
-use graphics::line::{Shape as LineShape};
-use piston_window::*;
-
 use lsystem::{LSystem, Sym};
 
+const VERTEX_SHADER: &'static str = include_str!("shader.vert");
+const FRAGMENT_SHADER: &'static str = include_str!("shader.frag");
 
-fn lsystem_bounds(iter: &[Sym], angle_radians: f64) -> (f64, f64, f64, f64) {
+#[derive(Copy, Clone, Debug)]
+struct Vertex {
+    position: [f64; 2],
+    dist: f64,
+}
+
+implement_vertex!(Vertex, position, dist);
+
+#[derive(Debug)]
+struct LSystemRender {
+    x_min: f64,
+    x_max: f64,
+    y_min: f64,
+    y_max: f64,
+    t_max: f64,
+    verts: Vec<Vertex>,
+}
+
+fn render_lsystem(iter: &[Sym], angle_radians: f64) -> LSystemRender {
     let mut x = 0.0;
     let mut y = 0.0;
+    let mut t = 0.0;
     let mut angle = 0.0f64;
 
     let mut stack = vec![];
@@ -26,11 +39,18 @@ fn lsystem_bounds(iter: &[Sym], angle_radians: f64) -> (f64, f64, f64, f64) {
     let mut x_min = 0.0f64;
     let mut y_min = 0.0f64;
 
+    let mut verts = vec![];
+
     for sym in iter {
         match *sym {
             Sym::Fwd(_) => {
-                x += 10.0 * angle.cos();
-                y += 10.0 * angle.sin();
+                verts.push(Vertex { position: [x, y], dist: t });
+
+                x += -0.005 * angle.cos();
+                y += -0.005 * angle.sin();
+                t += 0.005;
+
+                verts.push(Vertex { position: [x, y], dist: t });
 
                 x_max = x_max.max(x);
                 y_max = y_max.max(y);
@@ -46,82 +66,31 @@ fn lsystem_bounds(iter: &[Sym], angle_radians: f64) -> (f64, f64, f64, f64) {
                 x = x_;
                 y = y_;
                 angle = angle_;
+                // t = t_;
             },
         }
     }
 
-    (x_min, y_min, x_max, y_max)
-}
-
-
-fn render_lsystem(draw_state: &DrawState,
-                  transform: Matrix2d,
-                  graphics: &mut G2d,
-                  iter: &[Sym],
-                  angle_radians: f64,
-                  color: [f32; 4],
-                  radius: f64) {
-    // const RADIUS: f64 = 1.0;
-
-    let mut x = 0.0;
-    let mut y = 0.0;
-    let mut angle = 0.0f64;
-
-    let mut stack = vec![];
-
-    let line = Line::new(color, radius)
-        .shape(LineShape::Bevel);
-
-    for sym in iter {
-        match *sym {
-            Sym::Fwd(_) => {
-                let xp = x + 10.0 * angle.cos();
-                let yp = y + 10.0 * angle.sin();
-
-                line.draw([x, y, xp, yp], draw_state, transform, graphics);
-
-                x = xp;
-                y = yp;
-            },
-            Sym::Var(_) => { },
-            Sym::Plus => angle -= angle_radians,
-            Sym::Minus => angle += angle_radians,
-            Sym::Push => stack.push((x, y, angle)),
-            Sym::Pop => {
-                let (x_, y_, angle_) = stack.pop().expect("mismatched nesting");
-                x = x_;
-                y = y_;
-                angle = angle_;
-            },
-        }
+    LSystemRender {
+        x_min: x_min,
+        x_max: x_max,
+        y_min: y_min,
+        y_max: y_max,
+        t_max: t,
+        verts: verts,
     }
 }
 
 fn main() {
-    let mut window: PistonWindow = WindowSettings::new("Hello", (640, 480))
-        .exit_on_esc(true)
-        .samples(16)
-        .build()
-        .unwrap_or_else(|e| panic!("Failed to build PistonWindow: {}", e));
+    use glium::DisplayBuild;
 
-    // // Sierpinski Arrowhead Curve
-    // let mut sys = {
-    //     let a = Sym::Fwd(0);
-    //     let b = Sym::Fwd(1);
-    //     let plus = Sym::Plus;
-    //     let minus = Sym::Minus;
+    let display = glium::glutin::WindowBuilder::new()
+        .with_dimensions(1024, 768)
+        .with_title("Hello, world!".to_owned())
+        // .with_multisampling(16)
+        .build_glium()
+        .unwrap();
 
-    //     let mut map = HashMap::new();
-    //     map.insert(a, vec![plus, b, minus, a, minus, b, plus]);
-    //     map.insert(b, vec![minus, a, plus, b, plus, a, minus]);
-
-    //     LSystem::new(
-    //         vec![a],
-    //         map
-    //     )
-    // };
-
-    // let angle = std::f64::consts::PI / 3.0;
 
     // Fractal Plant
     let mut sys = {
@@ -144,26 +113,25 @@ fn main() {
 
     let angle = (25.0f64).to_radians();
 
-    // // Pythagoras Tree
+    // // Sierpinski Arrowhead Curve
     // let mut sys = {
     //     let a = Sym::Fwd(0);
     //     let b = Sym::Fwd(1);
     //     let plus = Sym::Plus;
     //     let minus = Sym::Minus;
-    //     let push = Sym::Push;
-    //     let pop = Sym::Pop;
 
     //     let mut map = HashMap::new();
-    //     map.insert(b, vec![b, b]);
-    //     map.insert(a, vec![b, push, plus, a, pop, minus, a]);
+    //     map.insert(a, vec![plus, b, minus, a, minus, b, plus]);
+    //     map.insert(b, vec![minus, a, plus, b, plus, a, minus]);
 
     //     LSystem::new(
-    //         vec![plus, plus, a],
+    //         vec![a],
     //         map
     //     )
     // };
 
-    // let angle = (45.0f64).to_radians();
+    // let angle = std::f64::consts::PI / 3.0;
+
 
     // // Dragon Curve
     // let mut sys = {
@@ -186,42 +154,69 @@ fn main() {
 
     // let angle = (90.0f64).to_radians();
 
-    const FGCOLOR: [f32; 4] = [0.0, 0.5, 1.0, 1.0];
-    const BGCOLOR: [f32; 4] = [0.0, 0.1, 0.2, 1.0];
+    let mut render = render_lsystem(&sys.get(0), angle);
 
+    let indices = glium::index::NoIndices(glium::index::PrimitiveType::LinesList);
+
+    let mut vertex_buffer = glium::VertexBuffer::new(&display, &render.verts).unwrap();
+    let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
+
+    let mut scale = 1.0f32;
+    let mut offset: [f32; 2] = [0.0, 0.0];
+    let offset_step = 0.1f32;
     let mut iter_num = 0usize;
 
-    while let Some(e) = window.next() {
-        if let Event::Input(Input::Text(ref s)) = e {
-            match &s[..] {
-                "\u{f703}" => { // right arrow
-                    iter_num = iter_num.saturating_add(1);
+    let params = glium::draw_parameters::DrawParameters {
+        // blend: glium::Blend::alpha_blending(),
+        smooth: Some(glium::Smooth::Nicest),
+        .. Default::default()
+    };
+
+    for event in display.wait_events() {
+        use glium::Surface;
+        use glium::glutin::Event;
+
+
+        if let Event::ReceivedCharacter(ch) = event {
+            match ch {
+                '+' | '=' => scale *= 1.1,
+                '-' => scale /= 1.1,
+                's' => offset[1] += offset_step / scale,
+                'w' => offset[1] -= offset_step / scale,
+                'd' => offset[0] -= offset_step / scale,
+                'a' => offset[0] += offset_step / scale,
+                'q' | 'e' => {
+                    iter_num = match ch {
+                        'e' => iter_num.saturating_add(1),
+                        'q' => iter_num.saturating_sub(1),
+                        _ => unreachable!(),
+                    };
+                    render = render_lsystem(&sys.get(iter_num), angle);
+                    vertex_buffer = glium::VertexBuffer::new(&display, &render.verts).unwrap();
                 },
-                "\u{f702}" => { // left arrow
-                    iter_num = iter_num.saturating_sub(1);
+                'c' => offset = [0.0, 0.0],
+                '\x1b' => return,
+                _ => {
+                    println!("key: {:?}", ch);
                 },
-                _ => (),
             }
-            println!("got text {:?}", s);
         }
 
-        let size = window.size();
-        let iter = sys.get(iter_num);
+        let mut target = display.draw();
 
-        window.draw_2d(&e, |c, g| {
-            let (x_min, y_min, x_max, y_max) = lsystem_bounds(iter, angle);
-            let x_sc = size.width as f64 / (x_max - x_min);
-            let y_sc = size.height as f64 / (y_max - y_min);
-            let sc = x_sc.min(y_sc);
+        let size = (render.x_max - render.x_min).max(render.y_max - render.y_min) as f32;
 
-            println!("initial transform {:?}", c.transform);
+        target.clear_color(0.0, 0.0, 0.0, 1.0);
+        target.draw(&vertex_buffer, &indices, &program,
+                    &uniform! { scale: scale, size: size, offset: offset, t_max: render.t_max as f32 },
+                    &params).unwrap();
+        target.finish().unwrap();
 
-            let transform = c.transform
-                .zoom(sc)
-                .trans(-x_min, -y_min);
-
-            clear(BGCOLOR, g);
-            render_lsystem(&c.draw_state, transform, g, iter, angle, FGCOLOR, 1.0 / sc);
-        });
+        match event {
+            Event::Closed => {
+                return;
+            },
+            _ => (),
+        }
     }
 }
