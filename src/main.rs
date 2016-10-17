@@ -1,6 +1,7 @@
 #[macro_use] extern crate glium;
 
 mod lsystem;
+mod lsystem_reader;
 
 use std::collections::HashMap;
 use lsystem::{LSystem, Sym};
@@ -92,67 +93,58 @@ fn main() {
         .unwrap();
 
 
-    // Fractal Plant
-    let mut sys = {
-        let x = Sym::Fwd(0);
-        let f = Sym::Fwd(1);
-        let plus = Sym::Plus;
-        let minus = Sym::Minus;
-        let push = Sym::Push;
-        let pop = Sym::Pop;
+    // // Fractal Plant
+    // let mut sys = lsystem_reader::lsystem_from_strs(
+    //     "XF",
+    //     "",
+    //     "+++X",
+    //     &[('X', "F-[[X]+X]+F[+FX]-X"),
+    //       ('F', "FF")]
+    // );
 
-        let mut map = HashMap::new();
-        map.insert(x, vec![f, minus, push, push, x, pop, plus, x, pop, plus, f, push, plus, f, x, pop, minus, x]);
-        map.insert(f, vec![f, f]);
-
-        LSystem::new(
-            vec![plus, plus, plus, x],
-            map
-        )
-    };
-
-    let angle = (25.0f64).to_radians();
+    // let angle = (25.0f64).to_radians();
 
     // // Sierpinski Arrowhead Curve
-    // let mut sys = {
-    //     let a = Sym::Fwd(0);
-    //     let b = Sym::Fwd(1);
-    //     let plus = Sym::Plus;
-    //     let minus = Sym::Minus;
-
-    //     let mut map = HashMap::new();
-    //     map.insert(a, vec![plus, b, minus, a, minus, b, plus]);
-    //     map.insert(b, vec![minus, a, plus, b, plus, a, minus]);
-
-    //     LSystem::new(
-    //         vec![a],
-    //         map
-    //     )
-    // };
+    // let mut sys = lsystem_reader::lsystem_from_strs(
+    //     "AB",
+    //     "",
+    //     "A",
+    //     &[('A', "+B-A-B+"),
+    //       ('B', "-A+B+A-")]
+    // );
 
     // let angle = std::f64::consts::PI / 3.0;
 
-
     // // Dragon Curve
-    // let mut sys = {
-    //     let x = Sym::Fwd(0);
-    //     let y = Sym::Fwd(1);
-    //     let f = Sym::Var(0);
-
-    //     let plus = Sym::Plus;
-    //     let minus = Sym::Minus;
-
-    //     let mut map = HashMap::new();
-    //     map.insert(x, vec![x, plus, y, f, plus]);
-    //     map.insert(y, vec![minus, f, x, minus, y]);
-
-    //     LSystem::new(
-    //         vec![f, x],
-    //         map
-    //     )
-    // };
+    // let mut sys = lsystem_reader::lsystem_from_strs(
+    //     "XY",
+    //     "F",
+    //     "FX",
+    //     &[('X', "X+YF+"),
+    //       ('Y', "-FX-Y")]
+    // );
 
     // let angle = (90.0f64).to_radians();
+
+    // // Koch curve variant
+    // let mut sys = lsystem_reader::lsystem_from_strs(
+    //     "F",
+    //     "",
+    //     "F",
+    //     &[('F', "F+F-F-F+F")]
+    // );
+
+    // let angle = (90.0f64).to_radians();
+
+    // Koch curve
+    let mut sys = lsystem_reader::lsystem_from_strs(
+        "F",
+        "",
+        "F++F++F",
+        &[('F', "F-F++F-F")]
+    );
+
+    let angle = (60.0f64).to_radians();
 
     let mut render = render_lsystem(&sys.get(0), angle);
 
