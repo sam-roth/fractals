@@ -1,10 +1,12 @@
 #[macro_use] extern crate glium;
+extern crate rustc_serialize;
 
 mod lsystem;
 mod lsystem_reader;
 
-use std::collections::HashMap;
-use lsystem::{LSystem, Sym};
+use std::env::args;
+use std::io::Read;
+use lsystem::Sym;
 
 const VERTEX_SHADER: &'static str = include_str!("shader.vert");
 const FRAGMENT_SHADER: &'static str = include_str!("shader.frag");
@@ -92,59 +94,14 @@ fn main() {
         .build_glium()
         .unwrap();
 
-
-    // // Fractal Plant
-    // let mut sys = lsystem_reader::lsystem_from_strs(
-    //     "XF",
-    //     "",
-    //     "+++X",
-    //     &[('X', "F-[[X]+X]+F[+FX]-X"),
-    //       ('F', "FF")]
-    // );
-
-    // let angle = (25.0f64).to_radians();
-
-    // // Sierpinski Arrowhead Curve
-    // let mut sys = lsystem_reader::lsystem_from_strs(
-    //     "AB",
-    //     "",
-    //     "A",
-    //     &[('A', "+B-A-B+"),
-    //       ('B', "-A+B+A-")]
-    // );
-
-    // let angle = std::f64::consts::PI / 3.0;
-
-    // // Dragon Curve
-    // let mut sys = lsystem_reader::lsystem_from_strs(
-    //     "XY",
-    //     "F",
-    //     "FX",
-    //     &[('X', "X+YF+"),
-    //       ('Y', "-FX-Y")]
-    // );
-
-    // let angle = (90.0f64).to_radians();
-
-    // // Koch curve variant
-    // let mut sys = lsystem_reader::lsystem_from_strs(
-    //     "F",
-    //     "",
-    //     "F",
-    //     &[('F', "F+F-F-F+F")]
-    // );
-
-    // let angle = (90.0f64).to_radians();
-
-    // Koch curve
-    let mut sys = lsystem_reader::lsystem_from_strs(
-        "F",
-        "",
-        "F++F++F",
-        &[('F', "F-F++F-F")]
+    let filename = args().nth(1).expect(
+        "Usage: fractals <json file>"
     );
 
-    let angle = (60.0f64).to_radians();
+    let mut src = String::new();
+    std::fs::File::open(filename).unwrap().read_to_string(&mut src).unwrap();
+    let mut sys = lsystem_reader::parse_lsystem(&src).unwrap();
+    let angle = sys.angle_radians();
 
     let mut render = render_lsystem(&sys.get(0), angle);
 

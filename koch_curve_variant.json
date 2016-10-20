@@ -1,0 +1,10 @@
+
+{
+    "fwds": "F",
+    "vars": "",
+    "axiom": "F",
+    "prods": {
+        "F": "F+F-F-F+F"
+    },
+    "angle": 90.0
+}

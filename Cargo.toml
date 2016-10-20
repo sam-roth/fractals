@@ -5,3 +5,4 @@ authors = ["Sam Roth <sam.roth1@gmail.com>"]
 
 [dependencies]
 glium = "*"
+rustc-serialize = "0.3"

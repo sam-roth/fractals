@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use lsystem::{LSystem, Sym};
+use rustc_serialize::json;
 
 
 pub fn lsystem_from_strs(fwds: &str,
                          vars: &str,
                          axiom: &str,
-                         prods: &[(char, &str)]) -> LSystem {
+                         prods: &[(char, &str)],
+                         angle_radians: f64) -> LSystem {
     let mut map = HashMap::new();
 
     let consts = [('+', Sym::Plus),
@@ -35,5 +37,22 @@ pub fn lsystem_from_strs(fwds: &str,
         })
         .collect();
 
-    LSystem::new(axiom_instrs, prods_map)
+    LSystem::new(axiom_instrs, prods_map, angle_radians)
+}
+
+#[derive(RustcDecodable)]
+#[allow(dead_code)]
+struct LSystemStrs {
+    fwds: String,
+    vars: String,
+    axiom: String,
+    prods: HashMap<char, String>,
+    angle: f64,
+}
+
+pub fn parse_lsystem(source: &str) -> json::DecodeResult<LSystem> {
+    let strs: LSystemStrs = try!(json::decode(source));
+    let prods: Vec<(char, &str)> = strs.prods.iter().map(|(c, s)| (*c, &s[..])).collect();
+
+    Ok(lsystem_from_strs(&strs.fwds, &strs.vars, &strs.axiom, &prods, strs.angle.to_radians()))
 }

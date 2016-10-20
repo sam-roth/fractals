@@ -3,6 +3,7 @@ name = "fractal"
 version = "0.1.0"
 dependencies = [
  "glium 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc-serialize 0.3.19 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -323,6 +324,11 @@ dependencies = [
 [[package]]
 name = "rustc-demangle"
 version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "rustc-serialize"
+version = "0.3.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]

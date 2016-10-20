@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::cell::RefCell;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
 pub enum Sym {
@@ -14,13 +13,15 @@ pub enum Sym {
 pub struct LSystem {
     iterations: Vec<Vec<Sym>>,
     productions: HashMap<Sym, Vec<Sym>>,
+    angle_radians: f64,
 }
 
 impl LSystem {
-    pub fn new(axiom: Vec<Sym>, productions: HashMap<Sym, Vec<Sym>>) -> LSystem {
+    pub fn new(axiom: Vec<Sym>, productions: HashMap<Sym, Vec<Sym>>, angle_radians: f64) -> LSystem {
         LSystem {
             iterations: vec![axiom],
             productions: productions,
+            angle_radians: angle_radians,
         }
     }
 
@@ -37,6 +38,10 @@ impl LSystem {
         }
 
         &self.iterations[index]
+    }
+
+    pub fn angle_radians(&self) -> f64 {
+        self.angle_radians
     }
 
     fn compute_iteration(&self, state: &[Sym]) -> Vec<Sym> {

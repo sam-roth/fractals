@@ -1,0 +1,10 @@
+{
+    "fwds": "XF",
+    "vars": "",
+    "axiom": "++X",
+    "prods": {
+        "X": "F-[[X]+X]+F[+FX]-X",
+        "F": "FF"
+    },
+    "angle": 25.0
+}
