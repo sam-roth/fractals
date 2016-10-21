@@ -47,13 +47,13 @@ fn render_lsystem(iter: &[Sym], angle_radians: f64) -> LSystemRender {
     for sym in iter {
         match *sym {
             Sym::Fwd(_) => {
-                verts.push(Vertex { position: [x, y], dist: t });
+                verts.push(Vertex {position: [x, y], dist: t});
 
                 x += -0.005 * angle.cos();
                 y += -0.005 * angle.sin();
                 t += 0.005;
 
-                verts.push(Vertex { position: [x, y], dist: t });
+                verts.push(Vertex {position: [x, y], dist: t});
 
                 x_max = x_max.max(x);
                 y_max = y_max.max(y);
@@ -69,7 +69,6 @@ fn render_lsystem(iter: &[Sym], angle_radians: f64) -> LSystemRender {
                 x = x_;
                 y = y_;
                 angle = angle_;
-                // t = t_;
             },
         }
     }
@@ -90,7 +89,6 @@ fn main() {
     let display = glium::glutin::WindowBuilder::new()
         .with_dimensions(1024, 768)
         .with_title("Hello, world!".to_owned())
-        // .with_multisampling(16)
         .build_glium()
         .unwrap();
 
@@ -99,16 +97,28 @@ fn main() {
     );
 
     let mut src = String::new();
-    std::fs::File::open(filename).unwrap().read_to_string(&mut src).unwrap();
+
+    std::fs::File::open(filename).unwrap()
+        .read_to_string(&mut src)
+        .unwrap();
+
     let mut sys = lsystem_reader::parse_lsystem(&src).unwrap();
     let angle = sys.angle_radians();
 
     let mut render = render_lsystem(&sys.get(0), angle);
 
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::LinesList);
+    let indices = glium::index::NoIndices(
+        glium::index::PrimitiveType::LinesList);
 
-    let mut vertex_buffer = glium::VertexBuffer::new(&display, &render.verts).unwrap();
-    let program = glium::Program::from_source(&display, VERTEX_SHADER, FRAGMENT_SHADER, None).unwrap();
+    let mut vertex_buffer = glium::VertexBuffer::new(
+        &display,
+        &render.verts).unwrap();
+
+    let program = glium::Program::from_source(
+        &display,
+        VERTEX_SHADER,
+        FRAGMENT_SHADER,
+        None).unwrap();
 
     let mut scale = 1.0f32;
     let mut offset: [f32; 2] = [0.0, 0.0];
@@ -116,7 +126,6 @@ fn main() {
     let mut iter_num = 0usize;
 
     let params = glium::draw_parameters::DrawParameters {
-        // blend: glium::Blend::alpha_blending(),
         smooth: Some(glium::Smooth::Nicest),
         .. Default::default()
     };
@@ -128,12 +137,17 @@ fn main() {
 
         if let Event::ReceivedCharacter(ch) = event {
             match ch {
+                // Zoom
                 '+' | '=' => scale *= 1.1,
                 '-' => scale /= 1.1,
-                's' => offset[1] += offset_step / scale,
+                // Pan
                 'w' => offset[1] -= offset_step / scale,
-                'd' => offset[0] -= offset_step / scale,
                 'a' => offset[0] += offset_step / scale,
+                's' => offset[1] += offset_step / scale,
+                'd' => offset[0] -= offset_step / scale,
+                // Center
+                'c' => offset = [0.0, 0.0],
+                // Change iteration count
                 'q' | 'e' => {
                     iter_num = match ch {
                         'e' => iter_num.saturating_add(1),
@@ -143,8 +157,8 @@ fn main() {
                     render = render_lsystem(&sys.get(iter_num), angle);
                     vertex_buffer = glium::VertexBuffer::new(&display, &render.verts).unwrap();
                 },
-                'c' => offset = [0.0, 0.0],
-                '\x1b' => return,
+                // Exit
+                '\x1b' => return, // '\x1b' is the code for 'Escape'
                 _ => {
                     println!("key: {:?}", ch);
                 },
@@ -153,19 +167,20 @@ fn main() {
 
         let mut target = display.draw();
 
-        let size = (render.x_max - render.x_min).max(render.y_max - render.y_min) as f32;
+        let size = (render.x_max - render.x_min)
+            .max(render.y_max - render.y_min) as f32;
 
         target.clear_color(0.0, 0.0, 0.0, 1.0);
         target.draw(&vertex_buffer, &indices, &program,
-                    &uniform! { scale: scale, size: size, offset: offset, t_max: render.t_max as f32 },
+                    &uniform! {scale: scale,
+                               size: size,
+                               offset: offset,
+                               t_max: render.t_max as f32},
                     &params).unwrap();
         target.finish().unwrap();
 
-        match event {
-            Event::Closed => {
-                return;
-            },
-            _ => (),
+        if let Event::Closed = event {
+            return;
         }
     }
 }
